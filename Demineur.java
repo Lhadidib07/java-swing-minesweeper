@@ -5,19 +5,30 @@ import javax.swing.*;
 
 public class Demineur {
 
+  
+
     JFrame frame = new JFrame("Demineur");
     public int rowSize = 10; // le nombres de cellul dans un row 
     public int colSize = 10; // le nombres de cellul dans une colonne 
+    public int nombresMines = 20; // le nombres de mines 
+
     public int tailleCellule = 50; // la taille d'une cellul 
-    public int boardHeight = rowSize * tailleCellule; // le height selon le nombres de cellul 
-    public int boardWidth = colSize * tailleCellule; // le widh selon le nombres de cellul
+    public int boardHeight = rowSize * tailleCellule+1; // le height selon le nombres de cellul 
+    public int boardWidth = colSize * tailleCellule+1; // le widh selon le nombres de cellul
+
     public int nbCelluleCliquer = 0; // le nomrbres de cellul cliqué 
-    public int nombresMines = 10; // le nombres de mines 
     public boolean partieTerminer; // pour voir si la partie et toujour en cours 
     public int tempsEcoule = 0; // Variable pour stocker le temps écoulé en secondes
     public JLabel tempsLabel; // JLabel pour afficher le temps écoulé
+    JPanel gamePanel = new JPanel();
+    JPanel panel = new JPanel();
     public Timer timer; // le timer pour le chrono 
 
+      public void setValue(){ 
+        tailleCellule = 50; 
+        boardHeight = rowSize * tailleCellule+1;
+        boardWidth = colSize * tailleCellule+1;
+      }
     private class Cellule extends JButton {
         private boolean etat=false;
         private boolean mine;
@@ -39,26 +50,72 @@ public class Demineur {
         }
 
     }
+    public void afficherCell(){ 
+        for(int i=0 ; i <rowSize;i++){ 
+            for(int j=0; j<colSize;j++){ 
+                if(!grid[i][j].isEtat()){ 
+                    if (grid[i][j].isMine()) {
+
+                        grid[i][j].setText("💣");
+                        grid[i][j].setEnabled(false);
+
+                    }
+                }
+                
+            }
+        }
+    }
 
     private Cellule[][] grid;
 
-    public Demineur() {
-        
+    public void setDeficulter(String type){ 
+        switch (type) {
+            case "Facile":
+                rowSize = 5;
+                colSize = 5;
+                nombresMines = 4;
+            break;
+            case "Moyen":
+                rowSize = 7;
+                colSize = 7;
+                nombresMines = 5;
+            break;
+            case "Difficile":
+                rowSize = 11;
+                colSize = 11;
+                nombresMines = 10;
+            break;
+            // Ajoutez d'autres niveaux de difficulté si nécessaire
+        }
+    }
+
+    public Demineur(String type){
+        setDeficulter(type);
+        setValue();
+        // Configuration initiale de la fenêtre
         frame.setSize(boardWidth, boardHeight);
         frame.setLocationRelativeTo(null);
         frame.setResizable(false);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        //  JComboBox pour choisir la difficulté
-        // String[] difficultes = { "Facile", "Moyen", "Difficile" };
-        // JComboBox<String> comboBoxDifficulte = new JComboBox<>(difficultes);
-        // Ajoutez un ActionListener au JComboBox pour détecter les changements de sélection
-        // frame.add(comboBoxDifficulte, BorderLayout.NORTH);
     
-        JPanel panel = new JPanel();
+        // Panel principal
         panel.setLayout(new BorderLayout());
     
-        JPanel gamePanel = new JPanel();
+        // JComboBox pour choisir la difficulté
+        String[] difficultes = { "Facile", "Moyen", "Difficile" };
+        JComboBox<String> comboBoxDifficulte = new JComboBox<>(difficultes);
+        comboBoxDifficulte.setSelectedItem(dificulter);
+        comboBoxDifficulte.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String selectedDifficulty = (String) comboBoxDifficulte.getSelectedItem();
+                // Appelez une méthode pour redémarrer le jeu en fonction de la difficulté choisie
+                restartGame(selectedDifficulty);
+            }
+        });
+        panel.add(comboBoxDifficulte, BorderLayout.NORTH);
+    
+        
         gamePanel.setLayout(new GridLayout(rowSize, colSize));
     
         grid = new Cellule[rowSize][colSize];
@@ -70,10 +127,12 @@ public class Demineur {
             }
         }
     
+        // Ajouter le panneau du jeu à la fenêtre
         panel.add(gamePanel, BorderLayout.CENTER);
     
+        // Label pour afficher le temps écoulé
         tempsLabel = new JLabel("Temps écoulé : 0 secondes");
-        panel.add(tempsLabel, BorderLayout.NORTH);
+        panel.add(tempsLabel, BorderLayout.SOUTH);
     
         frame.add(panel);
     
@@ -88,29 +147,6 @@ public class Demineur {
     
         timer.start();
     }
-    /* a utiliser lors du changemnt de dificulté 
-    private void restartGame() {
-        // Réinitialisez toutes les variables du jeu pour recommencer une nouvelle partie
-        nbCelluleCliquer = 0;
-        tempsEcoule = 0;
-        partieTerminer = false;
-        frame.setSize(boardWidth, boardHeight);
-
-        // Réinitialisez l'état des cellules
-        for (int i = 0; i < rowSize; i++) {
-            for (int j = 0; j < colSize; j++) {
-                grid[i][j].setEtat(false);
-                grid[i][j].setMine(false);
-                grid[i][j].setText("");
-                grid[i][j].setEnabled(true);
-            }
-        }
-
-        // Réinitialisez le label du temps écoulé
-        tempsLabel.setText("Temps écoulé : 0 secondes");
-    }
-
-     */
     private void placerMines() {
         Random random = new Random();
         int minesPlacées = 0;
@@ -126,6 +162,28 @@ public class Demineur {
             }
         }
     }
+    private void restartGame(String selectedDifficulty) {
+        // Réinitialisez les variables en fonction de la difficulté choisie
+        setDeficulter(selectedDifficulty);
+
+        frame.dispose();
+        frame.setSize(boardWidth, boardHeight);
+        frame.setLocationRelativeTo(null);
+        frame.setResizable(false);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // Réinitialisez les variables du jeu
+        nbCelluleCliquer = 0;
+        tempsEcoule = 0;
+        partieTerminer = false;
+    
+        // Arrêtez le timer s'il est en cours
+        if (timer != null && timer.isRunning()) {
+            timer.stop();
+        }
+
+        main(new String[]{ selectedDifficulty } );
+    }
+    
 
     private class CelluleListener implements ActionListener {
         private int row;
@@ -148,8 +206,11 @@ public class Demineur {
                 if (cellule.isMine()) {
                     // Game Over
                     cellule.setText("💣");
+                    cellule.setEnabled(false);
+
                     // afficher toutes les bombe plus fenetre game over 
                     partieTerminer=true;
+                    afficherCell();
                     JOptionPane.showMessageDialog(frame, "Vous avez perdu en "+tempsEcoule+" s !");
                     timer.stop();
                     return;
@@ -215,11 +276,17 @@ public class Demineur {
         
 
     }
+    
+    public static String dificulter = "Facile"; 
 
     public static void main(String[] args) {
+        if(args.length != 0 ){ 
+           dificulter=args[0];
+        }
         SwingUtilities.invokeLater(() -> {
-            Demineur demineur = new Demineur();
+            Demineur demineur = new Demineur(dificulter);
             demineur.frame.setVisible(true);
         });
+
     }
 }
